@@ -18,8 +18,8 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("The planet the player walks on (its center defines 'down'). " +
-             "If left empty, it's taken from the PlanetGravityBody on this object.")]
+    [Tooltip("Optional fallback only. 'Up' normally comes from the PlanetGravityBody receiver " +
+             "(whichever gravity field the player is inside). Used only if no receiver is present.")]
     public Transform planet;
 
     [Tooltip("The controlled camera's transform. Its facing (projected onto the ground) is the " +
@@ -58,23 +58,47 @@ public class PlayerController : MonoBehaviour
     public LayerMask groundMask = ~0;
 
     Rigidbody rb;
+    PlanetGravityBody body;
     Vector3 lastPlanarForward = Vector3.forward; // reused when the camera looks near-vertical
     bool jumpQueued;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
+        body = GetComponent<PlanetGravityBody>();
 
         // This controller drives rotation explicitly (surface align + facing). Freeze physics
         // rotation so collisions can't tip the character over.
         rb.freezeRotation = true;
+    }
 
-        if (planet == null)
+    /// <summary>
+    /// Current "up" (surface normal). Comes from the gravity receiver — i.e. whichever field the
+    /// player is in. Returns false when the player is in no field (in space): the caller should
+    /// skip movement so the body just drifts.
+    /// </summary>
+    bool TryGetUp(out Vector3 up)
+    {
+        if (body != null)
         {
-            var gravity = GetComponent<PlanetGravityBody>();
-            if (gravity != null)
-                planet = gravity.planet;
+            if (!body.InGravity)
+            {
+                up = body.GravityUp; // last known up; movement is skipped anyway
+                return false;
+            }
+            up = body.GravityUp;
+            return true;
         }
+
+        // Fallback for setups without a PlanetGravityBody.
+        if (planet != null)
+        {
+            up = (transform.position - planet.position).normalized;
+            return true;
+        }
+
+        up = Vector3.up;
+        return false;
     }
 
     void OnEnable()
@@ -105,10 +129,9 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (planet == null)
+        // No gravity reference (e.g. drifted out of every field) -> don't drive movement; coast.
+        if (!TryGetUp(out Vector3 up))
             return;
-
-        Vector3 up = (transform.position - planet.position).normalized;
 
         Vector2 input = moveAction != null && moveAction.action != null
             ? moveAction.action.ReadValue<Vector2>()

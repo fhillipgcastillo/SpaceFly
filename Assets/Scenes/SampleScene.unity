@@ -129,7 +129,25 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 08635df6d59536948a03524243f9759c, type: 3}
   m_PrefabInstance: {fileID: 218369903}
   m_PrefabAsset: {fileID: 0}
---- !u!135 &52606984
+--- !u!114 &52606984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 52606980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 075a3161436e6c94ba1b6ff397c81116, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gravityStrength: 9.8
+  radius: 132.1
+  falloff: 0
+  centerOverride: {fileID: 0}
+  gizmoColor: {r: 0.3, g: 0.6, b: 1, a: 0.9}
+  alwaysDrawGizmo: 1
+--- !u!135 &52606985
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -324,6 +342,9 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 08635df6d59536948a03524243f9759c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 52606985}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 08635df6d59536948a03524243f9759c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 52606984}
@@ -555,8 +576,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d94becfd0a999074b8b2dbf763b755c1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  planet: {fileID: 52606983}
-  gravityStrength: 9.8
   alignToSurface: 0
   alignSpeed: 5
 --- !u!4 &1272419419

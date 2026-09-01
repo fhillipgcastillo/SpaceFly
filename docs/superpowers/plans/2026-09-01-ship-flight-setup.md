@@ -39,8 +39,20 @@ and keeps it enabled; the ship only borrows its value while you are flying.
 
 On the **`VehicleBoarding`** component (same GameObject):
 
-1. Set **`pilotedController`** to the `ShipController`. Drag the component itself, not the
-   GameObject. Without this the ship is still boardable — you just sit there and nothing flies.
+1. Set **`pilotedController`** to the `ShipController`.
+
+   **This one is fiddly — read it before you try.** The field is typed as the base
+   `MonoBehaviour` (so a car controller can use the same slot later), which means:
+
+   - The **circle-select picker does not work** — it can't list individual components for a
+     base-MonoBehaviour field.
+   - **Dragging the GameObject does not work** either.
+   - What works: **drag the `ShipController` component by its header** — the bar with its name
+     and icon — and drop it onto the `pilotedController` field. Both components are on the same
+     GameObject, so this is a drag *within the same Inspector*, from lower down the panel up to
+     the `VehicleBoarding` block. Scroll so both are visible first.
+
+   Without this the ship is still boardable — you just sit there and nothing flies.
 2. Set **`exitAction`** to the new **`Player/ExitVehicle`** action (bound to **Y**).
 3. Change **`exitPrompt`** to `Press Y to exit`. The scene still has the old "Press E to exit"
    string saved on the component, and the Inspector value wins over the code default.
@@ -134,6 +146,9 @@ driven on the physics clock.
   `VehicleBoarding` (§3), and that the seven action fields are filled (§2).
 - **Pressing E ejects you instead of rolling.** `exitAction` is not assigned (§3), so `Interact`
   is still handling exit and E is doing double duty.
+- **`pilotedController` refuses everything you drop on it.** You are probably dragging the
+  GameObject or using the circle picker; neither works on a base-MonoBehaviour field. Drag the
+  `ShipController` **component header** onto the field, within the same Inspector (§3).
 - **The ship fights the mouse and keeps levelling itself.** `ShipController` sets
   `alignToSurface = false` on the ship's `PlanetGravityBody` while piloted. If the ship still
   self-levels, confirm the `PlanetGravityBody` is on the same GameObject as `ShipController`.

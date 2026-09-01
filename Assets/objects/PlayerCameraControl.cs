@@ -47,6 +47,11 @@ public class PlayerCameraControl : MonoBehaviour
     public bool invertX = false;
     public bool invertY = false;
 
+    [Tooltip("When false, look input is ignored and the camera eases back behind its target. " +
+             "Piloting a vehicle turns this off so the mouse steers the ship instead of the " +
+             "camera, and turns it back on while free-look is held.")]
+    public bool lookEnabled = true;
+
     [Tooltip("Lock and hide the hardware cursor while playing.")]
     public bool lockCursor = true;
 
@@ -164,7 +169,9 @@ public class PlayerCameraControl : MonoBehaviour
     void UpdateHeadingFromInput()
     {
         Vector3 up = player.up;
-        Vector2 look = ReadLook();
+        // When look is suppressed the idle branch below runs every frame, easing the camera
+        // behind the target - which is exactly the chase-cam behaviour piloting wants.
+        Vector2 look = lookEnabled ? ReadLook() : Vector2.zero;
 
         if (look.sqrMagnitude > LookMoveThreshold)
         {

@@ -44,7 +44,12 @@ Flight itself (thrust, pitch, yaw, roll) is explicitly a later, separate feature
   3.16 x 4.66 x 0.5, center (-0.07, 2.67, -0.82). That is the hatch doorway and serves as
   the boarding zone. Child mesh parts carry convex `MeshCollider`s.
 - **Input** — `InputSystem_Actions` already defines an unused `Interact` action alongside
-  Move / Look / Jump / Sprint.
+  Move / Look / Jump / Sprint. **It carries a `Hold` interaction**, and the project has no
+  `InputSettings` asset, so the 0.4s `defaultHoldTime` applies: `performed` fires only after a
+  0.4s hold and a tap never fires it at all. The boarding code therefore subscribes to
+  `started`, which fires on the press itself and keeps the "Press E ..." prompt honest.
+  Subscribing to `performed` — the obvious choice — would have made the feature silently
+  unresponsive to a tap. Found in adversarial review, not by the compile check.
 - **Packages** — `com.unity.ugui` 2.0.0 present; TextMeshPro is **not** imported and there
   is **no Canvas** in the scene. The prompt therefore uses legacy `UnityEngine.UI.Text`
   with Unity's built-in `LegacyRuntime.ttf`, requiring no package import.
@@ -125,10 +130,17 @@ launch or strand the player.
 
 Three concrete mechanisms, each guarding a distinct failure:
 
-1. **One input listener, not two.** A single `interactAction.performed` handler in
-   `VehicleBoarding` branches on `IsPiloted`. Two separate listeners — one to board, one to
-   exit — would let a single keypress exit and re-board in the same frame. This is the
-   primary defect this design exists to prevent.
+1. **One input listener, not two — plus a scene-wide frame guard.** A single
+   `interactAction.started` handler in `VehicleBoarding` branches on `IsPiloted`. Two separate
+   listeners — one to board, one to exit — would let a single keypress exit and re-board. This
+   is the primary defect this design exists to prevent.
+
+   One listener per component is **not sufficient on its own**, which adversarial review
+   caught: `InputActionReference.action` resolves to the *shared* `InputAction` in the asset, so
+   one press invokes the handler on *every* boardable in the scene. With two boardables, vehicle
+   A's disembark and vehicle B's board can both run on one press. A static `lastActionFrame`
+   guard therefore enforces one press → one action across all instances, and a successful board
+   clears the boarded rig from every other zone's `rigInZone` so no stale reference survives.
 2. **`exitPoint` is authored outside the trigger volume.** After exiting, the player is not
    in the boarding zone at all, so no prompt is armed.
 3. **`playerInZone` is forced to `false` on board.** Disabling the player's capsule while it

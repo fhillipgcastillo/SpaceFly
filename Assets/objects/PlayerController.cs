@@ -119,6 +119,11 @@ public class PlayerController : MonoBehaviour
         moveAction?.action?.Disable();
         sprintAction?.action?.Disable();
         jumpAction?.action?.Disable();
+
+        // Drop a jump that was queued but never consumed. This controller is disabled while the
+        // player rides a vehicle; without this, a jump pressed in the same frame as boarding
+        // survives the entire ride and fires the instant they disembark.
+        jumpQueued = false;
     }
 
     void OnJump(InputAction.CallbackContext _)

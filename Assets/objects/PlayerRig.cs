@@ -168,12 +168,21 @@ public class PlayerRig : MonoBehaviour
         IsSuspended = false;
     }
 
-    /// <summary>Componentwise a/b, leaving a's component untouched where b's is ~0.</summary>
+    /// <summary>
+    /// Componentwise a/b, leaving a's component untouched where b's is near zero.
+    ///
+    /// Exact only for uniformly-scaled seats. lossyScale is itself an approximation once a
+    /// non-uniform scale is combined with rotation in the parent chain, so a seat under, say, a
+    /// (2,1,1)-scaled vehicle rotated about Y will leave the seated player slightly squashed.
+    /// Cosmetic, and undone on Restore, which puts the original localScale back. Author vehicles
+    /// with uniform scale if it matters.
+    /// </summary>
     static Vector3 DivideComponentwise(Vector3 a, Vector3 b)
     {
+        const float MinScale = 1e-5f;
         return new Vector3(
-            Mathf.Approximately(b.x, 0f) ? a.x : a.x / b.x,
-            Mathf.Approximately(b.y, 0f) ? a.y : a.y / b.y,
-            Mathf.Approximately(b.z, 0f) ? a.z : a.z / b.z);
+            Mathf.Abs(b.x) < MinScale ? a.x : a.x / b.x,
+            Mathf.Abs(b.y) < MinScale ? a.y : a.y / b.y,
+            Mathf.Abs(b.z) < MinScale ? a.z : a.z / b.z);
     }
 }

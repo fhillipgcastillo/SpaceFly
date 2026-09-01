@@ -120,3 +120,29 @@ No code changes and no UI changes:
 A `Rigidbody` and a `PlanetGravityBody` on the vehicle are both optional. Without a Rigidbody
 the player simply inherits no momentum on exit, so a static object — a turret, a console, a
 docked pod — is boardable too.
+
+---
+
+## 9. Notes from adversarial review
+
+Fixes applied after review, worth knowing when you playtest:
+
+- **The `Interact` action has a `Hold` interaction** (0.4s default). The code subscribes to
+  `started`, not `performed`, so a **tap** works as the prompt says. If you ever swap the action,
+  check its interaction — with `performed` a tap does nothing at all and the feature looks dead.
+- **One press = one action, scene-wide.** `InputActionReference` resolves to the shared action,
+  so every boardable receives the same press. A static frame guard plus clearing the boarded rig
+  from all other zones stops one press from exiting one vehicle and boarding another.
+- **The vehicle disembarks its pilot in `OnDisable`.** The player is parented to the ship, so
+  deactivating or destroying the ship would otherwise deactivate or destroy the player with it.
+- **`BoardingPrompt` toggles `label.enabled`, never `SetActive`.** Deactivating its own
+  GameObject would hide it from the scene lookup that finds it, permanently.
+- **A queued jump is now cleared** when `PlayerController` is disabled, so pressing Space and E
+  in the same frame no longer makes you jump the moment you disembark.
+
+Known limitations, deliberately not fixed:
+
+- With two overlapping boarding zones, walking out of one hides the shared prompt even if you
+  are still standing in the other. Cosmetic; the second vehicle is still boardable.
+- Seat scale compensation is exact only for uniformly-scaled vehicles. The dropship is uniform
+  (1.4172), so this does not affect it.

@@ -11,6 +11,11 @@ using UnityEngine.UI;
 ///
 /// Uses legacy uGUI <see cref="Text"/> rather than TextMeshPro because TMP's essential
 /// resources are not imported in this project; this works with no package import.
+///
+/// Visibility is toggled via <see cref="Behaviour.enabled"/> on the label, never by
+/// deactivating a GameObject: this component is allowed to sit on the same object as its label,
+/// and deactivating that object would also hide this component from the scene lookup that
+/// <see cref="VehicleBoarding"/> uses to find it — leaving a prompt that can never show again.
 /// </summary>
 [DisallowMultipleComponent]
 public class BoardingPrompt : MonoBehaviour
@@ -34,13 +39,13 @@ public class BoardingPrompt : MonoBehaviour
             return;
 
         label.text = message;
-        label.gameObject.SetActive(true);
+        label.enabled = true;
     }
 
     /// <summary>Hide the prompt.</summary>
     public void Hide()
     {
         if (label != null)
-            label.gameObject.SetActive(false);
+            label.enabled = false;
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -70,32 +71,67 @@ public class VehicleBoarding : MonoBehaviour
     Rigidbody vehicleRb;              // optional: only used to hand over momentum on exit
     PlanetGravityBody vehicleGravity; // optional: preferred source of "up" when placing the player
 
+    /// <summary>
+    /// All enabled boardables. Needed because a rig can stand in two overlapping zones at once:
+    /// when it boards one, the others must drop their now-stale reference to it. Mirrors the
+    /// registry pattern in <see cref="GravityField"/>.
+    /// </summary>
+    static readonly List<VehicleBoarding> All = new List<VehicleBoarding>();
+
+    /// <summary>
+    /// Frame in which some boardable already acted on an Interact press.
+    ///
+    /// <see cref="InputActionReference"/> resolves to the SHARED InputAction in the asset, so a
+    /// single press invokes the handler on EVERY boardable in the scene. Without this guard one
+    /// press could disembark from one vehicle and board another. One press, one action.
+    /// </summary>
+    static int lastActionFrame = -1;
+
     void Awake()
     {
         vehicleRb = GetComponent<Rigidbody>();
         vehicleGravity = GetComponent<PlanetGravityBody>();
 
         if (prompt == null)
-            prompt = FindFirstObjectByType<BoardingPrompt>();
+        {
+            // Include inactive: the prompt object may legitimately be hidden at startup.
+            prompt = FindFirstObjectByType<BoardingPrompt>(FindObjectsInactive.Include);
+        }
     }
 
     void OnEnable()
     {
+        All.Add(this);
+
         InputAction action = interactAction != null ? interactAction.action : null;
         if (action == null)
             return;
 
         action.Enable();
-        action.performed += OnInteract;
+
+        // 'started', not 'performed': the Interact action in InputSystem_Actions carries a Hold
+        // interaction, so 'performed' would only fire after the default 0.4s hold and a tap
+        // would do nothing at all. 'started' fires on the press itself, which is what the
+        // "Press E ..." prompt promises. It is also correct for an action with no interaction.
+        action.started += OnInteract;
     }
 
     void OnDisable()
     {
+        // The player is parented to this vehicle. If it is being deactivated or destroyed, they
+        // would go inactive - or be destroyed - along with it. Put them back on their feet first.
+        if (IsPiloted)
+            Disembark();
+
+        All.Remove(this);
+
         InputAction action = interactAction != null ? interactAction.action : null;
         if (action == null)
             return;
 
-        action.performed -= OnInteract;
+        // Deliberately no action.Disable() to match: InputAction.Enable/Disable is not reference
+        // counted, so disabling here would kill Interact for every other boardable in the scene.
+        action.started -= OnInteract;
     }
 
     // ---------------------------------------------------------------------
@@ -133,15 +169,39 @@ public class VehicleBoarding : MonoBehaviour
     // Input — ONE listener, branching on state.
     //
     // Two separate subscriptions (one to board, one to exit) would let a single keypress exit
-    // and immediately re-board within the same frame. Keep this as the only handler.
+    // and immediately re-board. Keep this as the only handler, and note that the shared action
+    // means every boardable in the scene sees the same press, hence the frame guard.
     // ---------------------------------------------------------------------
 
     void OnInteract(InputAction.CallbackContext _)
     {
+        if (lastActionFrame == Time.frameCount)
+            return; // another boardable already consumed this press
+
         if (IsPiloted)
+        {
+            lastActionFrame = Time.frameCount;
             Disembark();
-        else if (rigInZone != null)
-            Board(rigInZone);
+            return;
+        }
+
+        if (rigInZone == null)
+            return;
+
+        PlayerRig candidate = rigInZone;
+
+        // The press consumes the zone arming either way; walking back in re-arms it. Leaving it
+        // set on a failed board is what would let a later press seat a player who is nowhere
+        // near this vehicle.
+        rigInZone = null;
+
+        if (candidate.IsSuspended)
+            return; // already riding something else
+
+        if (Board(candidate))
+            lastActionFrame = Time.frameCount;
+        else
+            HidePrompt();
     }
 
     // ---------------------------------------------------------------------
@@ -174,6 +234,14 @@ public class VehicleBoarding : MonoBehaviour
         // OnTriggerExit, so clear the zone flag explicitly rather than trusting physics to.
         rigInZone = null;
 
+        // This rig may have been standing in other overlapping zones. Those references are now
+        // stale, and a later press there would otherwise seat a player who has since walked off.
+        for (int i = 0; i < All.Count; i++)
+        {
+            if (All[i] != this && All[i].rigInZone == rig)
+                All[i].rigInZone = null;
+        }
+
         ShowPrompt(exitPrompt);
         return true;
     }
@@ -196,15 +264,34 @@ public class VehicleBoarding : MonoBehaviour
         }
 
         Vector3 up = ExitUp(rig);
-        Quaternion rotation = ExitRotation(up, rig);
+        Vector3 position;
+        Quaternion rotation;
+
+        if (exitPoint != null)
+        {
+            position = exitPoint.position;
+            rotation = ExitRotation(up, rig);
+        }
+        else
+        {
+            // The anchor was cleared or destroyed at runtime. Drop the player clear above the
+            // hull rather than stranding them: a seated player with no way out is unrecoverable.
+            Debug.LogError($"{name}: VehicleBoarding.exitPoint is missing; dropping the pilot " +
+                           "above the vehicle instead. Assign an exit point.", this);
+            position = transform.position + up * 3f;
+            rotation = rig.transform.rotation;
+        }
+
         Vector3 velocity = vehicleRb != null ? vehicleRb.linearVelocity : Vector3.zero;
 
-        // Clear state before restoring, so anything reacting to the restore sees an empty vehicle.
+        // Restore FIRST, then clear. The other order means an exception mid-restore leaves the
+        // vehicle reporting itself empty while the player is still parented, kinematic and
+        // controller-less — a soft-lock with no way out.
+        rig.Restore(position, rotation, velocity);
+
         IsPiloted = false;
         Pilot = null;
         rigInZone = null;
-
-        rig.Restore(exitPoint.position, rotation, velocity);
 
         HidePrompt();
     }
@@ -220,7 +307,10 @@ public class VehicleBoarding : MonoBehaviour
             return vehicleGravity.GravityUp.normalized;
 
         Vector3 rigUp = rig.GravityUp;
-        return rigUp.sqrMagnitude > 1e-6f ? rigUp.normalized : exitPoint.up;
+        if (rigUp.sqrMagnitude > 1e-6f)
+            return rigUp.normalized;
+
+        return exitPoint != null ? exitPoint.up : transform.up;
     }
 
     /// <summary>Face the exit point's forward, flattened onto the surface, with sane fallbacks.</summary>

@@ -54,6 +54,13 @@ public class VehicleBoarding : MonoBehaviour
     [Tooltip("Camera focus height while piloting: ~4 for the dropship, ~1.5 for a car.")]
     public float pilotCamFocusHeight = 4f;
 
+    [Header("Piloted Controller")]
+    [Tooltip("Optional. A behaviour enabled while this vehicle is piloted and disabled on exit " +
+             "- e.g. ShipController. Left empty the vehicle is boardable but inert. Kept as a " +
+             "plain MonoBehaviour so this script stays vehicle-agnostic: a car controller drops " +
+             "into the same slot.")]
+    public MonoBehaviour pilotedController;
+
     [Header("Dev Visualization")]
     [Tooltip("Draw the seat and exit anchors in the Scene view. The exit placement is the " +
              "thing most likely to be authored wrong, so this is on by default.")]
@@ -262,6 +269,9 @@ public class VehicleBoarding : MonoBehaviour
                 All[i].rigInZone = null;
         }
 
+        if (pilotedController != null)
+            pilotedController.enabled = true;
+
         ShowPrompt(exitPrompt);
         return true;
     }
@@ -282,6 +292,12 @@ public class VehicleBoarding : MonoBehaviour
             HidePrompt();
             return;
         }
+
+        // Before the restore, not after: the controller puts back the camera settings it took
+        // (look suppression, idle delay), and PlayerRig.Restore then puts back distance/focus
+        // and snaps the camera. Reversing the order strands the camera in chase-cam mode.
+        if (pilotedController != null)
+            pilotedController.enabled = false;
 
         Vector3 up = ExitUp(rig);
         Vector3 position;

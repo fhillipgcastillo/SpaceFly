@@ -732,6 +732,7 @@ MonoBehaviour:
   lookSensitivity: 0.15
   invertX: 0
   invertY: 0
+  lookEnabled: 1
   lockCursor: 1
   pitchLimit: 85
   idleReturnDelay: 2
@@ -1468,12 +1469,70 @@ MonoBehaviour:
   seatAnchor: {fileID: 113076074}
   exitPoint: {fileID: 63220232}
   interactAction: {fileID: 1781555164194001046, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  exitAction: {fileID: -7481519849335752324, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   prompt: {fileID: 0}
   boardPrompt: Press E to pilot the dropship
-  exitPrompt: Press E to exit
-  pilotCamDistance: 18
-  pilotCamFocusHeight: 4
+  exitPrompt: Press Y to exit
+  pilotCamDistance: 15
+  pilotCamFocusHeight: 8
+  pilotedController: {fileID: 1402753783}
   drawGizmos: 1
+--- !u!114 &1402753783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1402753771}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4ba60c1e37e0c5b48a78f1da3bc1a4bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  throttleAction: {fileID: -2487239493014740831, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  strafeAction: {fileID: 3199650790817943107, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  rollAction: {fileID: 3221897378498305290, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  verticalAction: {fileID: -6823760941838841327, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  brakeAction: {fileID: -1445655308109924177, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  freeLookAction: {fileID: 3845980963812244817, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  lookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  mainThrust: 25
+  verticalThrust: 15
+  strafeThrust: 10
+  brakeDeceleration: 20
+  throttleRate: 0.5
+  maxSpeed: 15
+  linearDamping: 0.5
+  rollRate: 90
+  lookSensitivity: 0.15
+  maxTurnRate: 120
+--- !u!114 &1402753786
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1402753771}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c1e4a7b6d3f42e8a05b8c7d1f2e3a41, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speedLabel: {fileID: 0}
+  throttleLabel: {fileID: 0}
+  altitudeLabel: {fileID: 0}
+  gravityLabel: {fileID: 0}
+  throttleBarFill: {fileID: 0}
+  brakeIndicator: {fileID: 0}
+  freeLookIndicator: {fileID: 0}
+  controlsLabel: {fileID: 0}
+  showControls: 1
+  altitudeProbeRange: 500
+  refreshInterval: 0.1
+  textColor: {r: 0.75, g: 0.9, b: 1, a: 0.95}
+  activeColor: {r: 1, g: 0.55, b: 0.2, a: 1}
+  idleColor: {r: 0.6, g: 0.65, b: 0.7, a: 0.35}
+  fontSize: 16
 --- !u!1 &1634588601 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1148657779864618, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
@@ -1610,6 +1669,12 @@ PrefabInstance:
       addedObject: {fileID: 1402753772}
     - targetCorrespondingSourceObject: {fileID: 1073798048220644, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
       insertIndex: -1
+      addedObject: {fileID: 1402753782}
+    - targetCorrespondingSourceObject: {fileID: 1073798048220644, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1402753783}
+    - targetCorrespondingSourceObject: {fileID: 1073798048220644, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
+      insertIndex: -1
       addedObject: {fileID: 1402753778}
     - targetCorrespondingSourceObject: {fileID: 1073798048220644, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
       insertIndex: -1
@@ -1625,7 +1690,7 @@ PrefabInstance:
       addedObject: {fileID: 1402753781}
     - targetCorrespondingSourceObject: {fileID: 1073798048220644, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1402753782}
+      addedObject: {fileID: 1402753786}
     - targetCorrespondingSourceObject: {fileID: 1657851963093126, guid: e0c87617521568e4c81b2bb96e5e6989, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1322555488}

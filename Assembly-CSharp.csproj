@@ -70,6 +70,7 @@
     <Compile Include="Assets\TutorialInfo\Scripts\Readme.cs" />
     <Compile Include="Assets\objects\BoardingPrompt.cs" />
     <Compile Include="Assets\objects\PlayerCameraControl.cs" />
+    <Compile Include="Assets\objects\ShipHud.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

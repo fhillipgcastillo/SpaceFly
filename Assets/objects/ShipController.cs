@@ -99,8 +99,12 @@ public class ShipController : MonoBehaviour
     PlanetGravityBody gravityBody;
     PlayerCameraControl cameraControl;
 
-    // Mouse movement accumulated in Update, consumed in FixedUpdate.
+    // Mouse movement accumulated in Update, consumed in FixedUpdate, plus how much real time
+    // that accumulation covers. The turn-rate clamp needs the window, not the physics step:
+    // at 30fps only ~30 of the 50 fixed steps per second receive input, so clamping each one
+    // against maxTurnRate * fixedDeltaTime would silently cap turning at 72 deg/s instead of 120.
     Vector2 pendingLook;
+    float lookWindow;
 
     // True only between a successful OnEnable and its matching OnDisable. Gates the restore:
     // OnEnable can bail out by setting enabled = false, which itself fires OnDisable, and
@@ -157,6 +161,7 @@ public class ShipController : MonoBehaviour
 
         Throttle = 0f;
         pendingLook = Vector2.zero;
+        lookWindow = 0f;
         engaged = true;
     }
 
@@ -184,6 +189,7 @@ public class ShipController : MonoBehaviour
 
         Throttle = 0f;
         pendingLook = Vector2.zero;
+        lookWindow = 0f;
     }
 
     void Update()
@@ -194,17 +200,26 @@ public class ShipController : MonoBehaviour
         // Free-look hands the mouse back to the camera and freezes the ship's attitude.
         bool freeLook = IsPressed(freeLookAction);
         if (cameraControl != null)
+        {
             cameraControl.lookEnabled = freeLook;
+
+            // Restore the camera's own idle delay while free-looking. Left at 0 the camera
+            // starts easing back behind the ship the moment the mouse pauses - even mid
+            // free-look, and even between frames of a slow drag - so the view rubber-bands.
+            cameraControl.idleReturnDelay = freeLook ? savedIdleReturnDelay : 0f;
+        }
 
         if (freeLook)
         {
             pendingLook = Vector2.zero;
+            lookWindow = 0f;
             return;
         }
 
         // Accumulate here rather than reading in FixedUpdate: mouse delta is a per-frame value,
         // and sampling it on the physics clock double-counts or drops movement.
         pendingLook += ReadVector(lookAction);
+        lookWindow += Time.deltaTime;
     }
 
     void FixedUpdate()
@@ -213,6 +228,10 @@ public class ShipController : MonoBehaviour
             return;
 
         float dt = Time.fixedDeltaTime;
+
+        // Re-applied every step, not just on enable, so dragging it in the Inspector mid-flight
+        // actually does something - every other tuning field is read per-step and live.
+        rb.linearDamping = linearDamping;
 
         UpdateThrottle(dt);
         ApplyAttitude(dt);
@@ -229,12 +248,15 @@ public class ShipController : MonoBehaviour
 
     void ApplyAttitude(float dt)
     {
-        float maxStep = maxTurnRate * dt;
+        // Clamp against the real time the pending input actually covers, so the achievable turn
+        // rate is the same at 30fps as at 144fps.
+        float maxStep = maxTurnRate * Mathf.Max(lookWindow, dt);
 
         float yaw = Mathf.Clamp(pendingLook.x * lookSensitivity, -maxStep, maxStep);
         float pitch = Mathf.Clamp(-pendingLook.y * lookSensitivity, -maxStep, maxStep);
         float roll = -ReadAxis(rollAction) * rollRate * dt;
         pendingLook = Vector2.zero;
+        lookWindow = 0f;
 
         if (Mathf.Approximately(yaw, 0f) && Mathf.Approximately(pitch, 0f)
             && Mathf.Approximately(roll, 0f))
@@ -279,6 +301,11 @@ public class ShipController : MonoBehaviour
     /// <summary>
     /// Enable/disable the ship-only actions. <see cref="lookAction"/> is deliberately excluded:
     /// it belongs to the camera, which keeps it enabled on foot as well.
+    ///
+    /// Safe today because nothing else touches the Ship map and only one vehicle can be piloted
+    /// at a time. Note InputAction.Enable/Disable is NOT reference counted, so if a HUD or a
+    /// second system ever enables these actions, disembarking here would switch them off for it
+    /// too - at that point this needs a reference count rather than a bare Disable().
     /// </summary>
     void SetShipActions(bool enable)
     {

@@ -32,8 +32,15 @@ public class VehicleBoarding : MonoBehaviour
     public Transform exitPoint;
 
     [Header("Input")]
-    [Tooltip("The 'Interact' action from InputSystem_Actions. One action both boards and exits.")]
+    [Tooltip("The 'Interact' action from InputSystem_Actions. Boards the vehicle, and also " +
+             "exits it when exitAction below is left empty.")]
     public InputActionReference interactAction;
+
+    [Tooltip("Optional separate action to disembark. Assign this when the piloted controller " +
+             "needs the Interact key for something else - the ship binds E to roll, which would " +
+             "otherwise eject the pilot every time they rolled right. Left empty, Interact both " +
+             "boards and exits, which is fine for an inert boardable like a turret or console.")]
+    public InputActionReference exitAction;
 
     [Header("Prompt")]
     [Tooltip("On-screen label. If left empty, the one in the scene is found automatically, so " +
@@ -44,7 +51,7 @@ public class VehicleBoarding : MonoBehaviour
     public string boardPrompt = "Press E to pilot the dropship";
 
     [Tooltip("Shown while piloting.")]
-    public string exitPrompt = "Press E to exit";
+    public string exitPrompt = "Press F to exit";
 
     [Header("Piloting Camera")]
     [Tooltip("Camera distance while piloting. A big ship wants much more than a walking " +
@@ -129,6 +136,13 @@ public class VehicleBoarding : MonoBehaviour
         // would do nothing at all. 'started' fires on the press itself, which is what the
         // "Press E ..." prompt promises. It is also correct for an action with no interaction.
         action.started += OnInteract;
+
+        InputAction exit = ExitInputAction;
+        if (exit != null && exit != action)
+        {
+            exit.Enable();
+            exit.started += OnExitInput;
+        }
     }
 
     void OnDisable()
@@ -155,6 +169,10 @@ public class VehicleBoarding : MonoBehaviour
                 // counted, so disabling here would kill Interact for every other boardable.
                 action.started -= OnInteract;
             }
+
+            InputAction exit = ExitInputAction;
+            if (exit != null && exit != action)
+                exit.started -= OnExitInput;
         }
     }
 
@@ -197,6 +215,27 @@ public class VehicleBoarding : MonoBehaviour
     // means every boardable in the scene sees the same press, hence the frame guard.
     // ---------------------------------------------------------------------
 
+    /// <summary>The action that disembarks: the dedicated one when assigned, else Interact.</summary>
+    InputAction ExitInputAction
+    {
+        get
+        {
+            if (exitAction != null && exitAction.action != null)
+                return exitAction.action;
+            return interactAction != null ? interactAction.action : null;
+        }
+    }
+
+    /// <summary>Dedicated disembark key. Only fires when exitAction is a separate action.</summary>
+    void OnExitInput(InputAction.CallbackContext _)
+    {
+        if (lastActionFrame == Time.frameCount || !IsPiloted)
+            return;
+
+        lastActionFrame = Time.frameCount;
+        Disembark();
+    }
+
     void OnInteract(InputAction.CallbackContext _)
     {
         if (lastActionFrame == Time.frameCount)
@@ -204,6 +243,12 @@ public class VehicleBoarding : MonoBehaviour
 
         if (IsPiloted)
         {
+            // A dedicated exit key owns disembarking; Interact must stay out of the way so the
+            // piloted controller can use that key for something else (the ship rolls with E).
+            if (exitAction != null && exitAction.action != null
+                && exitAction.action != interactAction?.action)
+                return;
+
             lastActionFrame = Time.frameCount;
             Disembark();
             return;

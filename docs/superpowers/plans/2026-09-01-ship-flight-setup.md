@@ -35,12 +35,22 @@ Six come from the new **`Ship`** map, one from the existing **`Player`** map:
 `lookAction` pointing at the Player map is deliberate, not a mistake. The camera owns that action
 and keeps it enabled; the ship only borrows its value while you are flying.
 
-## 3. Connect it to boarding
+## 3. Connect it to boarding — and move the exit key
 
-On the **`VehicleBoarding`** component (same GameObject), set **`pilotedController`** to the
-`ShipController`. Drag the component itself, not the GameObject.
+On the **`VehicleBoarding`** component (same GameObject):
 
-Without this the ship is still boardable — you just sit there and nothing flies.
+1. Set **`pilotedController`** to the `ShipController`. Drag the component itself, not the
+   GameObject. Without this the ship is still boardable — you just sit there and nothing flies.
+2. Set **`exitAction`** to the new **`Player/ExitVehicle`** action (bound to **F**).
+3. Change **`exitPrompt`** to `Press F to exit`. The scene still has the old "Press E to exit"
+   string saved on the component, and the Inspector value wins over the code default.
+
+**Why the exit key moved.** `E` was bound to both roll-right and disembark. Rolling right in
+flight would have ejected you from the ship, mid-air, every time. Since you asked for Q/E roll
+specifically, the exit moved rather than the roll. Boarding is still **E**; only exiting is F.
+
+If you leave `exitAction` empty, `Interact` both boards and exits as before — which is still
+right for an inert boardable like a turret that has no use for E.
 
 ## 4. Controls
 
@@ -53,7 +63,7 @@ Without this the ship is still boardable — you just sit there and nothing flie
 | **Space / Ctrl** | Thrust out of the ship's own roof / belly |
 | **Mouse** | Pitch and yaw the nose |
 | **Alt (hold)** | Free-look — mouse goes to the camera, ship holds attitude |
-| **E** | Disembark |
+| **F** | Disembark (moved off E, which now rolls) |
 
 ---
 
@@ -74,10 +84,13 @@ Run these in order. This is the real verification.
 7. **Release everything inside the gravity field.** The ship falls. There is no auto-hover.
 8. **Q and E roll**, and the roll is held when you release.
 9. **A and D slide** the ship sideways without turning it.
-10. **Speed never exceeds 15 m/s** no matter how long you burn.
+10. **Speed stays at about 15 m/s** no matter how long you burn. (The clamp is applied before
+    the physics step integrates that step's thrust, so a brief overshoot of roughly 5% is
+    expected and self-corrects.)
 11. **Climb past ~20 units of altitude.** Gravity cuts out entirely and the ship coasts. Expected
     — see hazards below.
-12. **Land and press E.** Walking controls return, the ship re-levels to the surface, and the
+12. **Press E while flying** — nothing should happen. It rolls, it does not eject you.
+13. **Land and press F.** Walking controls return, the ship re-levels to the surface, and the
     camera goes back to orbiting the player at its original distance.
 
 If a step fails, say which number and what happened.
@@ -100,6 +113,10 @@ discarded on exit — set them again outside Play mode to keep them).
 | X doesn't stop you fast enough | `brakeDeceleration` |
 | Too fast / too slow overall | `maxSpeed` |
 
+If the ship's attitude judders visibly during turns, set the Dropship Rigidbody's **Interpolate**
+to `Interpolate`. Physics runs at 50 Hz while the screen may run far faster, and rotation is
+driven on the physics clock.
+
 ## 7. Known hazards, by design
 
 - **The gravity edge.** The field is `Constant` falloff with radius 70, so past that boundary
@@ -115,6 +132,8 @@ discarded on exit — set them again outside Play mode to keep them).
 
 - **Nothing responds at all while seated.** Check `pilotedController` is assigned on
   `VehicleBoarding` (§3), and that the seven action fields are filled (§2).
+- **Pressing E ejects you instead of rolling.** `exitAction` is not assigned (§3), so `Interact`
+  is still handling exit and E is doing double duty.
 - **The ship fights the mouse and keeps levelling itself.** `ShipController` sets
   `alignToSurface = false` on the ship's `PlanetGravityBody` while piloted. If the ship still
   self-levels, confirm the `PlanetGravityBody` is on the same GameObject as `ShipController`.

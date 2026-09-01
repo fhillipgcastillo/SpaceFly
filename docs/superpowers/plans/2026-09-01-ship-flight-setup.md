@@ -41,13 +41,13 @@ On the **`VehicleBoarding`** component (same GameObject):
 
 1. Set **`pilotedController`** to the `ShipController`. Drag the component itself, not the
    GameObject. Without this the ship is still boardable — you just sit there and nothing flies.
-2. Set **`exitAction`** to the new **`Player/ExitVehicle`** action (bound to **F**).
-3. Change **`exitPrompt`** to `Press F to exit`. The scene still has the old "Press E to exit"
+2. Set **`exitAction`** to the new **`Player/ExitVehicle`** action (bound to **Y**).
+3. Change **`exitPrompt`** to `Press Y to exit`. The scene still has the old "Press E to exit"
    string saved on the component, and the Inspector value wins over the code default.
 
 **Why the exit key moved.** `E` was bound to both roll-right and disembark. Rolling right in
 flight would have ejected you from the ship, mid-air, every time. Since you asked for Q/E roll
-specifically, the exit moved rather than the roll. Boarding is still **E**; only exiting is F.
+specifically, the exit moved rather than the roll. Boarding is still **E**; only exiting is Y.
 
 If you leave `exitAction` empty, `Interact` both boards and exits as before — which is still
 right for an inert boardable like a turret that has no use for E.
@@ -63,7 +63,7 @@ right for an inert boardable like a turret that has no use for E.
 | **Space / Ctrl** | Thrust out of the ship's own roof / belly |
 | **Mouse** | Pitch and yaw the nose |
 | **Alt (hold)** | Free-look — mouse goes to the camera, ship holds attitude |
-| **F** | Disembark (moved off E, which now rolls) |
+| **Y** | Disembark (moved off E, which now rolls) |
 
 ---
 
@@ -90,7 +90,7 @@ Run these in order. This is the real verification.
 11. **Climb past ~20 units of altitude.** Gravity cuts out entirely and the ship coasts. Expected
     — see hazards below.
 12. **Press E while flying** — nothing should happen. It rolls, it does not eject you.
-13. **Land and press F.** Walking controls return, the ship re-levels to the surface, and the
+13. **Land and press Y.** Walking controls return, the ship re-levels to the surface, and the
     camera goes back to orbiting the player at its original distance.
 
 If a step fails, say which number and what happened.

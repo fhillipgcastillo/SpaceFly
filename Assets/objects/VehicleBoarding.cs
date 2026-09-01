@@ -51,7 +51,7 @@ public class VehicleBoarding : MonoBehaviour
     public string boardPrompt = "Press E to pilot the dropship";
 
     [Tooltip("Shown while piloting.")]
-    public string exitPrompt = "Press F to exit";
+    public string exitPrompt = "Press Y to exit";
 
     [Header("Piloting Camera")]
     [Tooltip("Camera distance while piloting. A big ship wants much more than a walking " +

@@ -55,7 +55,7 @@ fight the planet's gravity rather than ignoring it.
 | **Space / Ctrl** | Thrust along the ship's own roof / belly |
 | **Mouse** | Pitch and yaw the nose |
 | **Alt (held)** | Free-look: the mouse drives the camera, ship attitude unchanged |
-| **F** | Disembark. Moved off `E` during review — `E` was bound to both roll-right and exit, so rolling right in flight ejected the pilot. `VehicleBoarding` gained an optional `exitAction`; boarding is still `E`. |
+| **Y** | Disembark. Moved off `E` during review — `E` was bound to both roll-right and exit, so rolling right in flight ejected the pilot. `VehicleBoarding` gained an optional `exitAction`; boarding is still `E`. |
 
 Vertical thrust is **ship-relative, not planet-relative**: nose up plus Space climbs, banked 90°
 plus Space pushes sideways. Fighting gravity means pointing the ship first. There is no

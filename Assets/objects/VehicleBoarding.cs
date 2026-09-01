@@ -65,7 +65,10 @@ public class VehicleBoarding : MonoBehaviour
     [Tooltip("Optional. A behaviour enabled while this vehicle is piloted and disabled on exit " +
              "- e.g. ShipController. Left empty the vehicle is boardable but inert. Kept as a " +
              "plain MonoBehaviour so this script stays vehicle-agnostic: a car controller drops " +
-             "into the same slot.")]
+             "into the same slot.\n\n" +
+             "TO ASSIGN: the circle picker and dragging the GameObject BOTH fail on a " +
+             "base-MonoBehaviour field. Drag the controller's COMPONENT HEADER onto this field " +
+             "- within the same Inspector when it sits on this same object.")]
     public MonoBehaviour pilotedController;
 
     [Header("Dev Visualization")]

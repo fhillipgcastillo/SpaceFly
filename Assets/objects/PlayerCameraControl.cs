@@ -33,11 +33,8 @@ public class PlayerCameraControl : MonoBehaviour
     public InputActionReference lookAction;
 
     [Header("Framing")]
-    [Tooltip("If true, the default distance and height are measured from where the camera is " +
-             "placed in the scene at Start. If false, the values below are used directly.")]
-    public bool deriveDefaultFromStartPlacement = true;
-
-    [Tooltip("Distance from the focus point to the camera.")]
+    [Tooltip("Distance from the focus point to the camera. Drives where the camera sits " +
+             "relative to the player; the camera snaps onto this offset at Start.")]
     public float distance = 6f;
 
     [Tooltip("How far above the player's pivot the camera looks at / orbits around.")]
@@ -106,10 +103,12 @@ public class PlayerCameraControl : MonoBehaviour
             cameraForward = Vector3.ProjectOnPlane(player.forward, up).normalized;
             if (cameraForward.sqrMagnitude < 1e-6f)
                 cameraForward = Vector3.ProjectOnPlane(transform.forward, up).normalized;
-        }
 
-        if (deriveDefaultFromStartPlacement && targetCamera != null && player != null)
-            MeasureDefaultFromCurrentPlacement();
+            // Snap the camera onto the player-relative offset immediately, so its authored
+            // scene position doesn't matter — move the player and the camera follows.
+            if (targetCamera != null)
+                ApplyCameraPose(instant: true);
+        }
 
         ApplyCursorLock();
     }
@@ -143,6 +142,19 @@ public class PlayerCameraControl : MonoBehaviour
             cameraForward = Vector3.ProjectOnPlane(player.forward, player.up).normalized;
         pitch = 0f;
         idleTimer = idleReturnDelay;
+    }
+
+    /// <summary>
+    /// Re-seed the heading behind the player and jump the camera onto its offset instantly
+    /// (no fly-in). Call after teleporting/warping the player at runtime.
+    /// </summary>
+    public void SnapBehindPlayer()
+    {
+        if (player == null || targetCamera == null)
+            return;
+
+        ResetToDefault();
+        ApplyCameraPose(instant: true);
     }
 
     // ---------------------------------------------------------------------
@@ -192,7 +204,7 @@ public class PlayerCameraControl : MonoBehaviour
         return Mouse.current != null ? Mouse.current.delta.ReadValue() : Vector2.zero;
     }
 
-    void ApplyCameraPose()
+    void ApplyCameraPose(bool instant = false)
     {
         Vector3 up = player.up;
 
@@ -206,7 +218,7 @@ public class PlayerCameraControl : MonoBehaviour
         Quaternion desiredRot = Quaternion.LookRotation(focus - desiredPos, up);
 
         Transform cam = targetCamera.transform;
-        if (followSmoothing <= 0f)
+        if (instant || followSmoothing <= 0f)
         {
             cam.SetPositionAndRotation(desiredPos, desiredRot);
         }
@@ -216,19 +228,6 @@ public class PlayerCameraControl : MonoBehaviour
             cam.position = Vector3.Lerp(cam.position, desiredPos, t);
             cam.rotation = Quaternion.Slerp(cam.rotation, desiredRot, t);
         }
-    }
-
-    void MeasureDefaultFromCurrentPlacement()
-    {
-        // Derive distance + focusHeight from where the camera was authored in the scene,
-        // so "default position" matches what you set up by hand.
-        Vector3 toCam = targetCamera.transform.position - player.position;
-        focusHeight = Vector3.Dot(toCam, player.up);
-
-        Vector3 horizontal = toCam - player.up * focusHeight;
-        distance = horizontal.magnitude;
-        if (distance < 0.01f)
-            distance = 6f; // camera was sitting on the player (e.g. old child at 0,0,0)
     }
 
     void ApplyCursorLock()

@@ -146,3 +146,26 @@ Known limitations, deliberately not fixed:
   are still standing in the other. Cosmetic; the second vehicle is still boardable.
 - Seat scale compensation is exact only for uniformly-scaled vehicles. The dropship is uniform
   (1.4172), so this does not affect it.
+
+---
+
+## 10. Troubleshooting
+
+- **The prompt vanished and E does nothing.** Check the Console. If `seatAnchor` or `exitPoint`
+  is unassigned, the first press logs an error, consumes the zone arming and hides the prompt —
+  you have to walk out of the trigger and back in to retry. Assign both (§2, §3) and re-enter.
+- **No prompt ever appears, no errors.** The `BoardingPrompt`'s GameObject is probably inactive;
+  a warning naming it is logged on start. Activate it — `BoardingPrompt` hides the *label*, so
+  its own object must stay active.
+- **E does nothing at all, anywhere.** Confirm `interactAction` is assigned. The action carries a
+  `Hold` interaction; the code subscribes to `started` so a tap works, but an unassigned
+  reference silently disables the whole feature.
+
+## 11. Before adding a second vehicle
+
+Two things to know, neither of which affects the single dropship:
+
+- Which vehicle wins a press, when you stand in two overlapping zones, is decided by component
+  activation order, not by proximity. If you want proximity, that needs a deliberate rule.
+- The two zones share one prompt label, so walking out of one hides the prompt while the other
+  is still boardable.

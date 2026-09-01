@@ -94,8 +94,16 @@ public class VehicleBoarding : MonoBehaviour
 
         if (prompt == null)
         {
-            // Include inactive: the prompt object may legitimately be hidden at startup.
+            // Include inactive so a prompt parked on a hidden object is still found rather than
+            // silently left null - but say so, because a prompt on an inactive object renders
+            // nothing no matter what we ask of it.
             prompt = FindFirstObjectByType<BoardingPrompt>(FindObjectsInactive.Include);
+        }
+
+        if (prompt != null && !prompt.gameObject.activeInHierarchy)
+        {
+            Debug.LogWarning($"{name}: the BoardingPrompt on '{prompt.name}' is on an inactive " +
+                             "object, so no prompt will ever be visible. Activate it.", this);
         }
     }
 
@@ -118,20 +126,29 @@ public class VehicleBoarding : MonoBehaviour
 
     void OnDisable()
     {
-        // The player is parented to this vehicle. If it is being deactivated or destroyed, they
-        // would go inactive - or be destroyed - along with it. Put them back on their feet first.
-        if (IsPiloted)
-            Disembark();
+        try
+        {
+            // The player is parented to this vehicle, so deactivating it would take them with
+            // it. Put them back on their feet first. (Verified for deactivation; on outright
+            // Destroy of the hierarchy the player may already be gone, which the null guard in
+            // Disembark covers.)
+            if (IsPiloted)
+                Disembark();
+        }
+        finally
+        {
+            // Unregister regardless: a throw above must not leave a dead component in the static
+            // registry and subscribed to the shared action for the rest of the process.
+            All.Remove(this);
 
-        All.Remove(this);
-
-        InputAction action = interactAction != null ? interactAction.action : null;
-        if (action == null)
-            return;
-
-        // Deliberately no action.Disable() to match: InputAction.Enable/Disable is not reference
-        // counted, so disabling here would kill Interact for every other boardable in the scene.
-        action.started -= OnInteract;
+            InputAction action = interactAction != null ? interactAction.action : null;
+            if (action != null)
+            {
+                // Deliberately no action.Disable(): InputAction.Enable/Disable is not reference
+                // counted, so disabling here would kill Interact for every other boardable.
+                action.started -= OnInteract;
+            }
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -196,7 +213,10 @@ public class VehicleBoarding : MonoBehaviour
         rigInZone = null;
 
         if (candidate.IsSuspended)
-            return; // already riding something else
+        {
+            HidePrompt(); // already riding something else; our prompt is stale
+            return;
+        }
 
         if (Board(candidate))
             lastActionFrame = Time.frameCount;

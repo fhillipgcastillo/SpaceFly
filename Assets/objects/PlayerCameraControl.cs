@@ -139,17 +139,7 @@ public class PlayerCameraControl : MonoBehaviour
     public void ResetToDefault()
     {
         if (player != null)
-        {
-            // Guard the degenerate case the same way Start() does. The target can now be any
-            // object handed over by VehicleBoarding, and one whose forward is parallel to its up
-            // would zero the heading permanently: once cameraForward is zero, neither the yaw
-            // rotation nor the re-projection below can ever bring it back.
-            Vector3 behind = Vector3.ProjectOnPlane(player.forward, player.up);
-            if (behind.sqrMagnitude < 1e-6f)
-                behind = Vector3.ProjectOnPlane(player.up == Vector3.up ? Vector3.forward : Vector3.up, player.up);
-            if (behind.sqrMagnitude > 1e-6f)
-                cameraForward = behind.normalized;
-        }
+            cameraForward = Vector3.ProjectOnPlane(player.forward, player.up).normalized;
         pitch = 0f;
         idleTimer = idleReturnDelay;
     }

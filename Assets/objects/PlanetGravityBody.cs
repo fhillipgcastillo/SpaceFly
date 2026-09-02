@@ -82,8 +82,13 @@ public class PlanetGravityBody : MonoBehaviour
 
         if (alignToSurface)
         {
-            Quaternion targetRot = Quaternion.FromToRotation(transform.up, GravityUp) * transform.rotation;
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * alignSpeed);
+            // Through the Rigidbody, not the Transform. Physics.autoSyncTransforms is off, so
+            // a MoveRotation issued earlier in this same step - PlayerController does one every
+            // step on this body - has not reached the Transform yet. Reading it here and
+            // writing it back would undo that turn.
+            Quaternion rotation = rb.rotation;
+            Quaternion targetRot = Quaternion.FromToRotation(rotation * Vector3.up, GravityUp) * rotation;
+            rb.MoveRotation(Quaternion.Slerp(rotation, targetRot, Time.fixedDeltaTime * alignSpeed));
         }
     }
 

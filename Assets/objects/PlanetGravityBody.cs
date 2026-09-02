@@ -82,11 +82,10 @@ public class PlanetGravityBody : MonoBehaviour
 
         if (alignToSurface)
         {
-            // Through the Rigidbody, never the Transform. With interpolation enabled the
-            // Transform holds the smoothed RENDER pose during FixedUpdate, so reading it here
-            // and writing it straight back would feed a frame-timing-dependent lag into the
-            // body and fight whoever else drives this rotation - PlayerController does, every
-            // step, and it already goes through rb.MoveRotation.
+            // Through the Rigidbody, not the Transform. Physics.autoSyncTransforms is off, so
+            // a MoveRotation issued earlier in this same step - PlayerController does one every
+            // step on this body - has not reached the Transform yet. Reading it here and
+            // writing it back would undo that turn.
             Quaternion rotation = rb.rotation;
             Quaternion targetRot = Quaternion.FromToRotation(rotation * Vector3.up, GravityUp) * rotation;
             rb.MoveRotation(Quaternion.Slerp(rotation, targetRot, Time.fixedDeltaTime * alignSpeed));

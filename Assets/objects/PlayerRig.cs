@@ -149,9 +149,12 @@ public class PlayerRig : MonoBehaviour
         // Leave kinematic BEFORE assigning velocity, otherwise the assignment is dropped and
         // the inherited momentum is silently lost.
         rb.isKinematic = savedKinematic;
-        rb.interpolation = savedInterpolation;
         rb.position = position;
         rb.rotation = rotation;
+
+        // After the teleport, mirroring Suspend, which clears it before the reparent. Re-armed
+        // first, the body would still hold the seat pose and smear from there to the exit point.
+        rb.interpolation = savedInterpolation;
         rb.linearVelocity = inheritedVelocity;
         rb.angularVelocity = Vector3.zero;
 

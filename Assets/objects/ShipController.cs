@@ -235,12 +235,10 @@ public class ShipController : MonoBehaviour
 
         UpdateThrottle(dt);
 
-        // rb.MoveRotation writes to the physics body, and with interpolation on the Transform
-        // holds the smoothed RENDER pose during FixedUpdate - so transform.forward here is not
-        // the attitude just commanded. Thread the orientation through instead: ApplyAttitude
-        // returns what it set, ApplyThrust pushes along that. The error it removes is small
-        // (at most maxTurnRate * dt, about 2.4 degrees, and only mid-turn) but it costs nothing
-        // to be exact, and interpolation made the stale read staler.
+        // Physics.autoSyncTransforms is off, so rb.MoveRotation does not reach the Transform
+        // until the step has simulated: transform.forward read later in this same FixedUpdate
+        // is still the PRE-turn attitude, and thrust along it trails the nose through a turn.
+        // Thread the commanded orientation through instead.
         Quaternion orientation = ApplyAttitude(dt, rb.rotation);
         ApplyThrust(orientation);
         ApplyBrake(dt);

@@ -82,8 +82,14 @@ public class PlanetGravityBody : MonoBehaviour
 
         if (alignToSurface)
         {
-            Quaternion targetRot = Quaternion.FromToRotation(transform.up, GravityUp) * transform.rotation;
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * alignSpeed);
+            // Through the Rigidbody, never the Transform. With interpolation enabled the
+            // Transform holds the smoothed RENDER pose during FixedUpdate, so reading it here
+            // and writing it straight back would feed a frame-timing-dependent lag into the
+            // body and fight whoever else drives this rotation - PlayerController does, every
+            // step, and it already goes through rb.MoveRotation.
+            Quaternion rotation = rb.rotation;
+            Quaternion targetRot = Quaternion.FromToRotation(rotation * Vector3.up, GravityUp) * rotation;
+            rb.MoveRotation(Quaternion.Slerp(rotation, targetRot, Time.fixedDeltaTime * alignSpeed));
         }
     }
 

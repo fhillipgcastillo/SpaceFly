@@ -38,6 +38,7 @@ public class PlayerRig : MonoBehaviour
     Transform savedParent;
     Vector3 savedLocalScale;
     bool savedKinematic;
+    RigidbodyInterpolation savedInterpolation;
     bool savedColliderEnabled;
     float savedCamDistance;
     float savedCamFocusHeight;
@@ -81,6 +82,7 @@ public class PlayerRig : MonoBehaviour
         savedParent = transform.parent;
         savedLocalScale = transform.localScale;
         savedKinematic = rb.isKinematic;
+        savedInterpolation = rb.interpolation;
         savedColliderEnabled = bodyCollider != null && bodyCollider.enabled;
 
         if (controller != null)
@@ -93,6 +95,11 @@ public class PlayerRig : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
         rb.isKinematic = true;
+
+        // Riding is rigid parenting, not physics. Interpolation smooths a body toward its OWN
+        // pose history, which lags the seat once the vehicle is moving - so an interpolated
+        // pilot visibly slides around the cockpit at speed. Restored on exit.
+        rb.interpolation = RigidbodyInterpolation.None;
 
         if (bodyCollider != null)
             bodyCollider.enabled = false;
@@ -142,6 +149,7 @@ public class PlayerRig : MonoBehaviour
         // Leave kinematic BEFORE assigning velocity, otherwise the assignment is dropped and
         // the inherited momentum is silently lost.
         rb.isKinematic = savedKinematic;
+        rb.interpolation = savedInterpolation;
         rb.position = position;
         rb.rotation = rotation;
         rb.linearVelocity = inheritedVelocity;

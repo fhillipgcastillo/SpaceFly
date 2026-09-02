@@ -234,8 +234,15 @@ public class ShipController : MonoBehaviour
         rb.linearDamping = linearDamping;
 
         UpdateThrottle(dt);
-        ApplyAttitude(dt);
-        ApplyThrust();
+
+        // rb.MoveRotation writes to the physics body, and with interpolation on the Transform
+        // holds the smoothed RENDER pose during FixedUpdate - so transform.forward here is not
+        // the attitude just commanded. Thread the orientation through instead: ApplyAttitude
+        // returns what it set, ApplyThrust pushes along that. The error it removes is small
+        // (at most maxTurnRate * dt, about 2.4 degrees, and only mid-turn) but it costs nothing
+        // to be exact, and interpolation made the stale read staler.
+        Quaternion orientation = ApplyAttitude(dt, rb.rotation);
+        ApplyThrust(orientation);
         ApplyBrake(dt);
         ClampSpeed();
     }
@@ -246,7 +253,11 @@ public class ShipController : MonoBehaviour
         Throttle = Mathf.Clamp01(Throttle + input * throttleRate * dt);
     }
 
-    void ApplyAttitude(float dt)
+    /// <summary>
+    /// Turn the ship for this step. Takes the orientation it currently holds and returns the one
+    /// it now holds, so the caller can thrust along the attitude this step actually commanded.
+    /// </summary>
+    Quaternion ApplyAttitude(float dt, Quaternion orientation)
     {
         // Clamp against the real time the pending input actually covers, so the achievable turn
         // rate is the same at 30fps as at 144fps.
@@ -260,21 +271,25 @@ public class ShipController : MonoBehaviour
 
         if (Mathf.Approximately(yaw, 0f) && Mathf.Approximately(pitch, 0f)
             && Mathf.Approximately(roll, 0f))
-            return;
+            return orientation;
 
-        // World-space axes taken from the ship, so this is ship-relative rotation.
-        Quaternion delta = Quaternion.AngleAxis(yaw, transform.up)
-                           * Quaternion.AngleAxis(pitch, transform.right)
-                           * Quaternion.AngleAxis(roll, transform.forward);
+        // World-space axes taken from the ship's own orientation, so this is ship-relative
+        // rotation. Derived from the passed-in orientation rather than the Transform for the
+        // reason given in FixedUpdate.
+        Quaternion delta = Quaternion.AngleAxis(yaw, orientation * Vector3.up)
+                           * Quaternion.AngleAxis(pitch, orientation * Vector3.right)
+                           * Quaternion.AngleAxis(roll, orientation * Vector3.forward);
 
-        rb.MoveRotation(delta * rb.rotation);
+        Quaternion rotated = delta * orientation;
+        rb.MoveRotation(rotated);
+        return rotated;
     }
 
-    void ApplyThrust()
+    void ApplyThrust(Quaternion orientation)
     {
-        Vector3 accel = transform.forward * (mainThrust * Throttle)
-                        + transform.up * (verticalThrust * ReadAxis(verticalAction))
-                        + transform.right * (strafeThrust * ReadAxis(strafeAction));
+        Vector3 accel = orientation * Vector3.forward * (mainThrust * Throttle)
+                        + orientation * Vector3.up * (verticalThrust * ReadAxis(verticalAction))
+                        + orientation * Vector3.right * (strafeThrust * ReadAxis(strafeAction));
 
         // Acceleration, not Force: mass should not change how the ship handles, and this sums
         // cleanly with the gravity PlanetGravityBody applies the same way.

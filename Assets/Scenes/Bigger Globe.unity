@@ -562,7 +562,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 920274565026176233, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
       propertyPath: rollRate
-      value: 45
+      value: 40.6
       objectReference: {fileID: 0}
     - target: {fileID: 920274565026176233, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
       propertyPath: mainThrust
@@ -574,15 +574,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 920274565026176233, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
       propertyPath: throttleRate
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 920274565026176233, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
       propertyPath: linearDamping
-      value: 1.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 920274565026176233, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
       propertyPath: verticalThrust
       value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 1203862121496058984, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
+      propertyPath: m_Interpolate
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2066202601259753200, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
+      propertyPath: pilotCamDistance
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 2066202601259753200, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
+      propertyPath: pilotCamFocusHeight
+      value: 9.04
       objectReference: {fileID: 0}
     - target: {fileID: 2640592068237301016, guid: 6fd8a03530cc36d428704a965f6e22d1, type: 3}
       propertyPath: fontSize
@@ -1123,7 +1135,7 @@ MonoBehaviour:
   targetCamera: {fileID: 2055301962}
   player: {fileID: 950713367}
   lookAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  distance: 6
+  distance: 3.78
   focusHeight: 1.5
   lookSensitivity: 0.15
   invertX: 0
@@ -1131,7 +1143,7 @@ MonoBehaviour:
   lookEnabled: 1
   lockCursor: 1
   pitchLimit: 85
-  idleReturnDelay: 2
+  idleReturnDelay: 3
   returnSpeed: 3
   followSmoothing: 12
 --- !u!1001 &2122894100
@@ -1240,6 +1252,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7300821949930751831, guid: 67301679ef3acf74e81621b1ca1fd54d, type: 3}
       propertyPath: m_Mass
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7300821949930751831, guid: 67301679ef3acf74e81621b1ca1fd54d, type: 3}
+      propertyPath: m_Interpolate
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
